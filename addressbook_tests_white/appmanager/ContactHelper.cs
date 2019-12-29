@@ -23,14 +23,19 @@ namespace addressbook_tests_white
         {
         }
 
+        public TableRows GetContactsDataFromTable()
+        {
+            
+            Table table = manager.MainWindow.Get<Table>("uxAddressGrid");
+            return table.Rows;
+        }
+
         public List<ContactData> GetContactsList()
         {
             {
                 List<ContactData> list = new List<ContactData>();
-                Table table = manager.MainWindow.Get<Table>("uxAddressGrid");
-                TableRows rows = table.Rows;
-                int rowsCount = rows.Count;
-                for (int i = 0; i < rowsCount; i++)
+                TableRows rows = GetContactsDataFromTable();
+                for (int i = 0; i < rows.Count; i++)
                 {
                     string firstname = rows[i].Cells[0].Value.ToString().Contains("не определено") ? 
                                           null : rows[i].Cells[0].Value.ToString();
@@ -53,6 +58,56 @@ namespace addressbook_tests_white
                     });
                 }
                 return list;
+            }
+        }
+
+        public void Remove(int num, bool alertAcc)
+        {
+            SelectContact(num);
+            Window dialogForm = InitContactRemoval();
+            CloseAlertAndGetItsText(dialogForm, alertAcc);
+        }
+
+        private Window InitContactRemoval()
+        {
+            manager.MainWindow.Get<Button>("uxDeleteAddressButton").Click();
+            return manager.MainWindow.ModalWindow("Question");
+        }
+
+        private void SelectContact(int num)
+        {
+            GetContactsDataFromTable()[num].Select();
+        }
+
+        private void CloseAlertAndGetItsText(Window dialogForm, bool alertAcc)
+        {
+            Panel btnPanel = dialogForm.Get<Panel>("uxContainerTableLayoutPanel").Get<Panel>("uxButtonsFlowLayoutPanel");
+            string txtBtn = btnPanel.Get(SearchCriteria.ByControlType(ControlType.Button)).Name;
+            if (alertAcc)
+            {
+                switch (txtBtn)
+                { 
+                    case "Yes":
+                        btnPanel.Get(SearchCriteria.ByControlType(ControlType.Button).AndByText("Yes")).Click();
+                        break;
+                    case "No":
+                        btnPanel.Get(SearchCriteria.ByControlType(ControlType.Button).AndByText("Yes")).Focus();
+                        btnPanel.Get(SearchCriteria.ByControlType(ControlType.Button).AndByText("Yes")).Click();
+                        break;
+                }
+            }
+            else
+            {
+                switch (txtBtn)
+                {
+                    case "Yes":
+                        btnPanel.Get(SearchCriteria.ByControlType(ControlType.Button).AndByText("No")).Focus();
+                        btnPanel.Get(SearchCriteria.ByControlType(ControlType.Button).AndByText("No")).Click();
+                        break;                        
+                    case "No":
+                        btnPanel.Get(SearchCriteria.ByControlType(ControlType.Button).AndByText("No")).Click();
+                        break;
+                }
             }
         }
 
@@ -80,17 +135,50 @@ namespace addressbook_tests_white
         {
             Panel tabPanel = dialogue.Get<Panel>("gasTableLayoutPanel1");
             Panel tabPanelLeft = tabPanel.Get<Panel>("uxLeftGasPanel");
+            Panel tabPanelRight = tabPanel.Get<Panel>("uxRightGasPanel");
             TextBox textboxFN = tabPanelLeft.Get<TextBox>("ueFirstNameAddressTextBox");
-            //TextBox textboxFN = (TextBox)tabPanelLeft.Get(SearchCriteria.ByControlType(ControlType.Edit).AndByClassName("First name:"));
             textboxFN.Enter(newContact.Firstname);
-            //TextBox textboxLN = (TextBox)tabPanelLeft.Get(SearchCriteria.ByControlType(ControlType.Edit).AndByClassName("Last name:"));
             TextBox textboxLN = tabPanelLeft.Get<TextBox>("ueLastNameAddressTextBox");
             textboxLN.Enter(newContact.Lastname);
+            CheckBox cmpFlag = tabPanelRight.Get<CheckBox>("uxIsCompanyGasCheckBox");
+            cmpFlag.Select();
+            if (cmpFlag.IsSelected)
+            {
+                TextBox textboxCom = tabPanelRight.Get<TextBox>("ueCompanyAddressTextBox");
+                textboxCom.Enter(newContact.Company);
+            }            
+            TextBox textboxCity = tabPanelRight.Get<TextBox>("ueCityAddressTextBox");
+            textboxCity.Enter(newContact.City);
+            TextBox textboxAdress = tabPanelRight.Get<TextBox>("ueAddressAddressTextBox");
+            textboxAdress.Enter(newContact.Address);
         }
 
         private void CloseContactDialogue(Window dialogue)
         {
             dialogue.Get<Button>("uxSaveAddressButton").Click();
         }
-     }
+
+        public void CheckContactExist(int num, ContactData contactData)
+        {
+            if (!IsContactCreatedBase())
+            {
+                if (!IsContactCreated(num, contactData))
+                {
+                    AddNewContact(contactData);
+                }
+            }
+        }
+
+        public bool IsContactCreated(int num, ContactData contact)
+        {
+            return IsContactCreatedBase()
+                && GetContactsDataFromTable()[num].Cells[0].ToString()
+                == contact.Firstname;
+        }
+
+        public bool IsContactCreatedBase()
+        {
+            return GetContactsDataFromTable().Count != 0 ;
+        }
+    }
 }

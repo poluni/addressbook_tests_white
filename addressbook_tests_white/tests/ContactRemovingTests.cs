@@ -5,23 +5,23 @@ using System.Collections.Generic;
 namespace addressbook_tests_white
 {
     [TestFixture]
-    public class ContactCreationTests : TestBase
+    public class ContactRemovalTests : TestBase
     {
         [Test]
-        public void TestContactCreation()
+        public void TestContactRemoving()
         {
-           List<ContactData> oldContacts = app.Contacts.GetContactsList();
-            ContactData newContact = new ContactData()
+            app.Contacts.CheckContactExist(0, new ContactData()
             {
-                Firstname = "A1", 
+                Firstname = "A1",
                 Lastname = "B1",
                 Company = "C1",
                 City = "D1",
                 Address = "E1"
-            };
-            app.Contacts.AddNewContact(newContact);
+            });
+            List<ContactData> oldContacts = app.Contacts.GetContactsList();
+            app.Contacts.Remove(0, true);
             List<ContactData> newContacts = app.Contacts.GetContactsList();
-            oldContacts.Add(newContact);
+            oldContacts.RemoveAt(0);
             oldContacts.Sort();
             newContacts.Sort();
             Assert.AreEqual(oldContacts, newContacts);
